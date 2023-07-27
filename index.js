@@ -1,11 +1,18 @@
 const express = require("express");
+const cors = require("cors");
+
 const app = express();
+app.use(
+  cors({
+    origin: ["http://localhost:3000"],
+  })
+);
+
 const { connectToDatabase } = require("./db");
 
 require("dotenv").config();
 
 app.use(express.json());
-
 // app.use("/test", require("./testData"));
 app.use("/api", require("./routes/projectBoardRoutes"));
 app.use("/api", require("./routes/taskRoutes"));
