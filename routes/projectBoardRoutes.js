@@ -5,20 +5,17 @@ const ProjectBoard = require("../models/ProjectBoard");
 const Task = require("../models/Task");
 
 // API to retrieve the list of boards
-router.get("/boards", async (req, res) => {
+router.get("/boards", async (req, res, next) => {
   try {
     const boards = await ProjectBoard.find({}, "title").exec();
     res.json(boards);
   } catch (err) {
-    console.error("Error retrieving boards:", err);
-    res
-      .status(500)
-      .json({ error: "An error occurred while retrieving boards" });
+    next(err);
   }
 });
 
 // API to retrieve the list of tasks in a given board by its ID
-router.get("/boards/:boardId/tasks", async (req, res) => {
+router.get("/boards/:boardId/tasks", async (req, res, next) => {
   const boardId = req.params.boardId;
 
   try {
@@ -30,8 +27,7 @@ router.get("/boards/:boardId/tasks", async (req, res) => {
     const tasks = await Task.find({ _id: { $in: board.tasks } }).exec();
     res.json(tasks);
   } catch (err) {
-    console.error("Error retrieving tasks:", err);
-    res.status(500).json({ error: "An error occurred while retrieving tasks" });
+    next(err);
   }
 });
 
