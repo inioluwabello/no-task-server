@@ -24,7 +24,8 @@ router.get("/boards/:boardId/tasks", async (req, res, next) => {
       return res.status(404).json({ error: "Board not found" });
     }
 
-    const tasks = await Task.find({ _id: { $in: board.tasks } }).exec();
+    // Retrieve only the non-archived tasks for the board
+    const tasks = await Task.find({ _id: { $in: board.tasks }, archived: { $ne: true } }).exec();
     res.json(tasks);
   } catch (err) {
     next(err);

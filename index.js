@@ -8,6 +8,8 @@ require("dotenv").config();
 app.use(express.json());
 app.use(cors({ origin: ["http://localhost:3000"] }));
 
+// app.use("/api", require("./testData"))
+
 app.use("/api", require("./routes/projectBoardRoutes"));
 app.use("/api", require("./routes/taskRoutes"));
 app.use("/api", require("./routes/commentRoutes"));

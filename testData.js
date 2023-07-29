@@ -29,8 +29,8 @@ const createDummyBoards = async () => {
 const addStatusesToBoard = async (board) => {
   try {
     const dynamicStatuses = [
-      ["Active", "Pending", "Completed"],
-      ["To Do", "Doing", "Done"],
+      ["ACTIVE", "PENDING", "COMPLETED"],
+      ["TODO", "DOING", "DONE"],
     ];
     const randomStatuses =
       dynamicStatuses[getRandomInt(0, dynamicStatuses.length - 1)];
