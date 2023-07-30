@@ -32,4 +32,61 @@ router.get("/boards/:boardId/tasks", async (req, res, next) => {
   }
 });
 
+// Route to create a new board
+router.post("/boards", async (req, res, next) => {
+  const { title } = req.body;
+
+  try {
+    // Retrieve the current list of boards
+    let boards = await ProjectBoard.find({}, "title").exec();
+    
+    // Create the new board
+    const newBoard = new ProjectBoard({
+      title: title,
+    });
+
+    // Add the new board to the list
+    boards.push(newBoard);
+    
+    // Save the updated list of boards
+    await Promise.all(boards.map(board => board.save()));
+    
+    // Return the updated list of boards and the new board entry
+    res.json({ boards, newBoard });
+    
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.delete("/boards/:boardId", async (req, res, next) => {
+  const { boardId } = req.params;
+
+  try {
+    // Check if the board exists
+    const board = await ProjectBoard.findById(boardId);
+    if (!board) {
+      return res.status(404).json({ error: "Board not found" });
+    }
+
+    // Delete all tasks in the board
+    await Task.deleteMany({ board: boardId });
+
+    // Delete the board entry
+    await ProjectBoard.findByIdAndDelete(boardId);
+
+    // Retrieve the updated list of boards
+    const boards = await ProjectBoard.find();
+
+    res
+      .status(200)
+      .json({ message: "Board and tasks deleted successfully", boards });
+  } catch (err) {
+    next(err);
+  }
+});
+
+
+
+
 module.exports = router;
