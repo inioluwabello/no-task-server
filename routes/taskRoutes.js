@@ -96,14 +96,60 @@ router.put("/tasks/:taskId/archive", async (req, res, next) => {
     // Save the updated task
     await task.save();
 
-    // Retrieve the updated list of non-archived tasks for the board
-    const tasks = await Task.find({
-      _id: { $in: board.tasks },
-      archived: { $ne: true },
-    }).exec();
-    res.status(200).json(tasks);
+    res.status(200).json(task);
+  } catch (err) {
+    next(err);
+  }
+});
 
-    res.status(200).json(updatedTasks);
+// Route to update task status
+router.put("/tasks/:taskId/status/:status", async (req, res, next) => {
+  const { taskId, status } = req.params;
+
+  try {
+    // Check if the task exists
+    const task = await Task.findById(taskId);
+    if (!task) {
+      return res.status(404).json({ error: "Task not found" });
+    }
+
+    // Set the 'archived' property to true
+    task.status = status;
+
+    // Save the updated task
+    await task.save();
+
+    res.status(200).json(task);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Route to update task status by status for a board
+router.put("/boards/:boardId/status/:oldStatus/:newStatus", async (req, res, next) => {
+  const { boardId, oldStatus, newStatus } = req.params;
+
+  try {
+    // Check if the board exists and populate the tasks
+    const board = await ProjectBoard.findById(boardId).populate("tasks");
+
+    if (!board) {
+      return res.status(404).json({ error: "Board not found" });
+    }
+
+    // Archive tasks with the specified status in the board's tasks array
+    for (const task of board.tasks) {
+      if (task.status === oldStatus) {
+        task.status = newStatus;
+        // Save the task with the archived property set to true
+        await task.save();
+      }
+    }
+
+    // Save the updated board with the archived tasks
+    await board.save();
+
+    res.status(200).json(board.tasks);
   } catch (err) {
     next(err);
   }
@@ -112,7 +158,6 @@ router.put("/tasks/:taskId/archive", async (req, res, next) => {
 // Route to archive tasks by status for a board
 router.put("/boards/:boardId/tasks/archive/:status", async (req, res, next) => {
   const { boardId, status } = req.params;
-  console.log({ boardId, status });
 
   try {
     // Check if the board exists and populate the tasks
@@ -148,6 +193,5 @@ router.put("/boards/:boardId/tasks/archive/:status", async (req, res, next) => {
     next(err);
   }
 });
-
 
 module.exports = router;
