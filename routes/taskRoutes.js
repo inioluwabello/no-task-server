@@ -7,7 +7,17 @@ const Task = require("../models/Task");
 // Route to create a new task for a board
 router.post("/boards/:boardId/tasks", async (req, res, next) => {
   const { boardId } = req.params;
-  const { title, status } = req.body;
+  const {
+    title,
+    description,
+    dueDate,
+    priority,
+    status,
+    assignees,
+    comments,
+    archived,
+    subTasks,
+  } = req.body;
 
   try {
     // Check if the board exists
@@ -19,8 +29,14 @@ router.post("/boards/:boardId/tasks", async (req, res, next) => {
     // Create the new task
     const newTask = new Task({
       title: title,
+      description: description,
+      dueDate: dueDate,
+      priority: priority,
       status: status,
-      // Add other task properties as needed
+      assignees: assignees,
+      comments: comments,
+      archived: archived,
+      subTasks: subTasks,
     });
 
     // Save the task to the board and update the board's tasks array
