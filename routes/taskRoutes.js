@@ -194,4 +194,21 @@ router.put("/boards/:boardId/tasks/archive/:status", async (req, res, next) => {
   }
 });
 
+// Route to delete tasks by id
+router.delete("/tasks/:taskId", async (req, res, next) => {
+  const { taskId } = req.params;
+
+  try {
+    // Delete task if it exists
+    const deletedTask = await Task.findByIdAndDelete(taskId);
+    if (!deletedTask) {
+      return res.status(404).json({ error: "Task not found" });
+    }
+
+    return res.json({ message: "Task deleted successfully." });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;
