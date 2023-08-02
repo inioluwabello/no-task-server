@@ -7,7 +7,17 @@ const Task = require("../models/Task");
 // API to retrieve the list of boards
 router.get("/boards", async (req, res, next) => {
   try {
-    const boards = await ProjectBoard.find({}, "title").exec();
+    const boards = await ProjectBoard.find({})
+      .populate({
+        path: "tasks",
+        select: "-__v", // Exclude the '__v' field from populated tasks
+      })
+      .populate({
+        path: "statuses",
+        select: "-__v", // Exclude the '__v' field from populated statuses
+      })
+      .exec();
+
     res.json(boards);
   } catch (err) {
     next(err);
@@ -59,6 +69,7 @@ router.post("/boards", async (req, res, next) => {
   }
 });
 
+// Route to delete a board
 router.delete("/boards/:boardId", async (req, res, next) => {
   const { boardId } = req.params;
 
@@ -86,6 +97,7 @@ router.delete("/boards/:boardId", async (req, res, next) => {
   }
 });
 
+// Route to add a new status
 router.post("/boards/:boardId/statuses", async (req, res) => {
   const boardId = req.params.boardId;
   const { status, color } = req.body;
@@ -109,10 +121,5 @@ router.post("/boards/:boardId/statuses", async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-
-module.exports = router;
-
-
-
 
 module.exports = router;

@@ -53,31 +53,35 @@ router.post("/boards/:boardId/tasks", async (req, res, next) => {
 });
 
 // Route to delete tasks by status for a board
-router.delete("/boards/:boardId/tasks/status/:status", async (req, res, next) => {
-  const { boardId, status } = req.params;
+router.delete(
+  "/boards/:boardId/tasks/status/:status",
+  async (req, res, next) => {
+    const { boardId, status } = req.params;
 
-  try {
-    // Check if the board exists
-    const board = await ProjectBoard.findById(boardId).populate("tasks");
-    if (!board) {
-      return res.status(404).json({ error: "Board not found" });
+    try {
+      const board = await ProjectBoard.findById(boardId)
+        .populate("tasks")
+        .populate("statuses");
+      if (!board) {
+        return res.status(404).json({ error: "Board not found" });
+      }
+
+      // Find tasks with the specified status in the board's tasks array and remove them
+      board.tasks = board.tasks.filter((task) => task.status !== status);
+      board.statuses = board.statuses.filter(
+        (boardStatus) => boardStatus.status !== status
+      );
+
+      // Save the updated board with the remaining tasks and statuses
+      await board.save();
+
+      res.status(200).json({ board, tasks: board.tasks });
+    } catch (err) {
+      next(err);
     }
-
-    // Find tasks with the specified status in the board's tasks array and remove them
-    board.tasks = board.tasks.filter((task) => task.status !== status);
-
-    // Save the updated board with the remaining tasks
-    await board.save();
-
-    const tasks = await Task.find({
-      _id: { $in: board.tasks },
-      archived: { $ne: true },
-    }).exec();
-    res.status(200).json(tasks);
-  } catch (err) {
-    next(err);
   }
-});
+);
+
 
 // Route to set 'archived' property of a task to true
 router.put("/tasks/:taskId/archive", async (req, res, next) => {
@@ -126,8 +130,8 @@ router.put("/tasks/:taskId/status/:status", async (req, res, next) => {
 });
 
 // Route to update task status by status for a board
-router.put("/boards/:boardId/status/:oldStatus/:newStatus", async (req, res, next) => {
-  const { boardId, oldStatus, newStatus } = req.params;
+router.put("/boards/:boardId/status/:oldStatus/:newStatus/:color", async (req, res, next) => {
+  const { boardId, oldStatus, newStatus, color } = req.params;
 
   try {
     // Check if the board exists and populate the tasks
@@ -135,6 +139,18 @@ router.put("/boards/:boardId/status/:oldStatus/:newStatus", async (req, res, nex
 
     if (!board) {
       return res.status(404).json({ error: "Board not found" });
+    }
+
+    // Check if the old status exists in the board's statuses array
+    const existingStatus = board.statuses.find(
+      (status) => status.status === oldStatus
+    );
+
+    // If the old status doesn't exist, create a new status and add it to the statuses array
+    if (!existingStatus) {
+      board.statuses.push({ status: oldStatus, color });
+    } else {
+      existingStatus.status = newStatus;
     }
 
     // Archive tasks with the specified status in the board's tasks array
@@ -149,7 +165,12 @@ router.put("/boards/:boardId/status/:oldStatus/:newStatus", async (req, res, nex
     // Save the updated board with the archived tasks
     await board.save();
 
-    res.status(200).json(board.tasks);
+    const tasks = await Task.find({
+      _id: { $in: board.tasks },
+      archived: { $ne: true },
+    }).exec();
+
+    res.status(200).json({ board, tasks });
   } catch (err) {
     next(err);
   }
@@ -176,6 +197,15 @@ router.put("/boards/:boardId/tasks/archive/:status", async (req, res, next) => {
       }
     }
 
+    // Update the status isArchived property to true
+    board.statuses.forEach(async (statusItem) => {
+      console.log(statusItem); // Just for debugging, you can remove this line
+      if (statusItem.status === status) {
+        statusItem.isArchived = true;
+        await statusItem.save();
+      }
+    });
+
     // Save the updated board with the archived tasks
     await board.save();
 
@@ -185,10 +215,7 @@ router.put("/boards/:boardId/tasks/archive/:status", async (req, res, next) => {
       archived: { $ne: true },
     }).exec();
 
-    console.log("all tasks: \n");
-    console.log(tasks);
-
-    res.status(200).json(tasks);
+    res.status(200).json({ board, tasks });
   } catch (err) {
     next(err);
   }
