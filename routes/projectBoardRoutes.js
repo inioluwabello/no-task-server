@@ -86,6 +86,32 @@ router.delete("/boards/:boardId", async (req, res, next) => {
   }
 });
 
+router.post("/boards/:boardId/statuses", async (req, res) => {
+  const boardId = req.params.boardId;
+  const { status, color } = req.body;
+
+  try {
+    const board = await ProjectBoard.findById(boardId);
+    if (!board) {
+      return res.status(404).json({ error: "Board not found" });
+    }
+
+    const newStatus = {
+      status,
+      color,
+    };
+
+    board.statuses.push(newStatus);
+    await board.save();
+
+    res.status(201).json({ message: "Status added successfully", board });
+  } catch (error) {
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+module.exports = router;
+
 
 
 
